@@ -1,0 +1,44 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Mountain, LogIn, UserPlus, Wallet } from 'lucide-react';
+
+export default function Navbar() {
+  return (
+    <nav className="bg-white shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center">
+              <Mountain className="h-8 w-8 text-indigo-600" />
+              <span className="ml-2 text-xl font-bold text-gray-900">Mountains Tech</span>
+            </Link>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <Link
+              to="/login"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50"
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              Login
+            </Link>
+            <Link
+              to="/signup"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Sign Up
+            </Link>
+            <Link
+              to="/fund-project"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+            >
+              <Wallet className="h-4 w-4 mr-2" />
+              Fund Project
+            </Link>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
