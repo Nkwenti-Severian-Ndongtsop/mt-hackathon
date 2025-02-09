@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
@@ -58,8 +57,8 @@ export default function SignUp() {
 
                 toast.success('Registration successful! Please check your email to verify your account.');
                 navigate('/login');
-              } catch (error) {
-                toast.error(error.message);
+              } catch (error: any) {
+                toast.error(error?.message || 'An error occurred during signup');
               } finally {
                 setSubmitting(false);
               }

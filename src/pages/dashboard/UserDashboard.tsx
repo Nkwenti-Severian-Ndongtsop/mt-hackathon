@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CreditCard, FileText, PlusCircle, Activity } from 'lucide-react';
@@ -32,7 +32,10 @@ export default function UserDashboard() {
   const navigate = useNavigate();
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
-  const [activeSubscription, setActiveSubscription] = useState(null);
+  const [activeSubscription, setActiveSubscription] = useState<{
+    subscription_plans: { name: string };
+    end_date: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!user) {

@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
@@ -67,8 +66,8 @@ export default function SubmitProject() {
 
                 toast.success('Project submitted successfully!');
                 navigate('/dashboard');
-              } catch (error) {
-                toast.error(error.message);
+              } catch (error: any) {
+                toast.error(error?.message || 'An error occurred');
               } finally {
                 setSubmitting(false);
               }

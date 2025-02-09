@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
@@ -47,8 +46,8 @@ export default function Login() {
 
                 toast.success('Login successful!');
                 navigate('/dashboard');
-              } catch (error) {
-                toast.error(error.message);
+              } catch (error: any) {
+                toast.error(error?.message || 'An error occurred during login');
               } finally {
                 setSubmitting(false);
               }
