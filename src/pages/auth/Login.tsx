@@ -1,10 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import { LogIn, Loader } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { supabase } from '../../lib/supabase';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 const LoginSchema = Yup.object().shape({
@@ -18,6 +18,7 @@ const LoginSchema = Yup.object().shape({
 export default function Login() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isResetting, setIsResetting] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -26,45 +27,20 @@ export default function Login() {
     }
   }, [user, navigate]);
 
-  const handleLogin = async (values: { email: string; password: string }, 
-    { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }) => {
+  const handleResetPassword = async (email: string) => {
     try {
-      // Show loading toast
-      const loadingToast = toast.loading('Signing in...');
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
+      setIsResetting(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
-
-      // Dismiss loading toast
-      toast.dismiss(loadingToast);
 
       if (error) throw error;
 
-      if (data.session) {
-        // Log successful authentication
-        console.log('Authentication successful:', {
-          user: data.session.user.email,
-          sessionExists: !!data.session
-        });
-
-        toast.success('Login successful!');
-        
-        // Use replace to prevent going back to login page
-        navigate('/dashboard', { replace: true });
-      } else {
-        // Log session issue
-        console.error('No session after successful login');
-        throw new Error('Failed to create session');
-      }
+      toast.success('Password reset link sent to your email');
+      setIsResetting(false);
     } catch (error: any) {
-      // Log the error for debugging
-      console.error('Login error:', error);
-      
-      toast.error(error?.message || 'An error occurred during login');
-    } finally {
-      setSubmitting(false);
+      toast.error(error.message || 'Error sending reset link');
+      setIsResetting(false);
     }
   };
 
@@ -87,7 +63,30 @@ export default function Login() {
               password: '',
             }}
             validationSchema={LoginSchema}
-            onSubmit={handleLogin}
+            onSubmit={async (values, { setSubmitting }) => {
+              try {
+                const loadingToast = toast.loading('Signing in...');
+                const { data, error } = await supabase.auth.signInWithPassword({
+                  email: values.email,
+                  password: values.password,
+                });
+
+                toast.dismiss(loadingToast);
+
+                if (error) throw error;
+
+                if (data.session) {
+                  toast.success('Login successful!');
+                  navigate('/dashboard', { replace: true });
+                } else {
+                  throw new Error('Failed to create session');
+                }
+              } catch (error: any) {
+                toast.error(error.message || 'An error occurred during login');
+              } finally {
+                setSubmitting(false);
+              }
+            }}
           >
             {({ errors, touched, isSubmitting }) => (
               <Form className="space-y-6">
@@ -124,6 +123,31 @@ export default function Login() {
                     {errors.password && touched.password && (
                       <p className="mt-2 text-sm text-red-600">{errors.password}</p>
                     )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="text-sm">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const email = (document.getElementById('email') as HTMLInputElement).value;
+                        if (!email) {
+                          toast.error('Please enter your email address');
+                          return;
+                        }
+                        handleResetPassword(email);
+                      }}
+                      disabled={isResetting}
+                      className="font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+                    >
+                      {isResetting ? 'Sending...' : 'Forgot your password?'}
+                    </button>
+                  </div>
+                  <div className="text-sm">
+                    <Link to="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
+                      Need an account?
+                    </Link>
                   </div>
                 </div>
 
