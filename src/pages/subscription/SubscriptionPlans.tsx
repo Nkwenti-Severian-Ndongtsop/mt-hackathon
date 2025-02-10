@@ -11,7 +11,10 @@ import type { SubscriptionPlan } from '../../types';
 import { api } from '../../lib/api';
 
 // Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const STRIPE_PUBLIC_KEY = `${import.meta.env.VITE_STRIPE_PUBLIC_KEY}`;
+const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
+
+console.log('Stripe key loaded:', STRIPE_PUBLIC_KEY ? 'Yes' : 'No');
 
 const SUBSCRIPTION_PLANS = [
   {
@@ -101,26 +104,36 @@ export default function SubscriptionPlans() {
     if (!user) {
       navigate('/login');
       return;
-    }``
+    }
 
     try {
       setProcessing(true);
       setSelectedPlan(plan);
 
-      const session = await api.createCheckoutSession({
+      // Check if Stripe is initialized
+      const stripe = await stripePromise;
+      if (!stripe) {
+        throw new Error('Stripe failed to initialize. Please check your public key.');
+      }
+
+      const response = await api.createCheckoutSession({
         planId: plan.id,
         userId: user.id,
         userEmail: user.email,
       });
 
-      if (session.error) {
-        throw new Error(session.error);
+      console.log('Checkout session response:', response);
+
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      // Redirect to Stripe Checkout
-      const stripe = await stripePromise;
-      const { error } = await stripe!.redirectToCheckout({
-        sessionId: session.id,
+      if (!response.id) {
+        throw new Error('No session ID received from server');
+      }
+
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: response.id
       });
 
       if (error) {
@@ -128,7 +141,9 @@ export default function SubscriptionPlans() {
       }
 
     } catch (error: any) {
+      console.error('Payment error:', error);
       toast.error(error.message || 'Error processing payment');
+    } finally {
       setProcessing(false);
     }
   };
