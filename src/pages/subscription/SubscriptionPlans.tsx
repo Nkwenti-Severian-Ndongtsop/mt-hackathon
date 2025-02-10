@@ -150,56 +150,27 @@ export default function SubscriptionPlans() {
 
   // Handle successful payment return from Stripe
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
-    const sessionId = query.get('session_id');
-
-    if (sessionId && selectedPlan) {
-      (async () => {
-        try {
-          // Verify payment status with backend
-          const response = await fetch('/api/verify-payment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              sessionId,
-              userId: user?.id,
-            }),
-          });
-
-          const paymentData = await response.json();
-
-          if (paymentData.success) {
-            // Update subscription in Supabase
-            const { error } = await supabase.from('user_subscriptions').insert([
-              {
-                user_id: user?.id,
-                plan_id: selectedPlan.id,
-                status: 'active',
-                end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                payment_id: sessionId,
-              },
-            ]);
-
-            if (error) throw error;
-
-            // Generate and download receipt
-            await generateReceipt({
-              id: sessionId,
-              plan: selectedPlan,
-              end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            });
-
-            toast.success('Subscription updated successfully!');
-            navigate('/dashboard');
+    const sessionId = new URLSearchParams(window.location.search).get('session_id');
+    
+    if (sessionId) {
+      // Verify payment
+      api.verifyPayment({ sessionId })
+        .then((response) => {
+          if (response.success) {
+            toast.success('Payment successful!');
+            if (response.receiptUrl) {
+              window.open(response.receiptUrl, '_blank');
+            }
+          } else {
+            toast.error('Payment verification failed');
           }
-        } catch (error: any) {
-          toast.error(error.message || 'Error updating subscription');
-        }
-      })();
+        })
+        .catch((error) => {
+          console.error('Payment verification error:', error);
+          toast.error('Error verifying payment');
+        });
     }
-  }, [selectedPlan, user, navigate]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">

@@ -87,11 +87,35 @@ router.post('/verify-payment', (async (req, res) => {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status === 'paid') {
-      res.json({ success: true, session });
+      // Update user_subscriptions table
+      const { error } = await supabase.from('user_subscriptions').insert({
+        user_id: session.metadata?.userId,
+        plan_id: session.metadata?.planId,
+        status: 'active',
+        start_date: new Date().toISOString(),
+        end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+        payment_id: session.id
+      });
+
+      if (error) {
+        console.error('Error updating subscription:', error);
+        return res.status(500).json({ error: 'Failed to update subscription' });
+      }
+
+      // Generate receipt
+      const receiptUrl = session.payment_intent as string;
+      
+      res.json({ 
+        success: true, 
+        session,
+        receiptUrl,
+        message: 'Payment successful and subscription activated!'
+      });
     } else {
       res.json({ success: false });
     }
   } catch (error: any) {
+    console.error('Payment verification error:', error);
     res.status(500).json({ error: error.message });
   }
 }) as RequestHandler);
