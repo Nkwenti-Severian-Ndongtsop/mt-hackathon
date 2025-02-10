@@ -17,19 +17,43 @@ export type Database = {
         Row: {
           id: string;
           name: string;
+          description: string | null;
           price: number;
           features: string[];
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          description?: string | null;
+          price: number;
+          features?: string[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          price?: number;
+          features?: string[];
+          created_at?: string;
         };
       };
       user_subscriptions: {
         Row: {
           id: string;
           user_id: string;
-          subscription_plans: {
-            name: string;
-          };
+          plan_id: string;
           status: string;
+          start_date: string;
           end_date: string;
+          payment_id: string;
+          created_at: string;
+          plan: {
+            name: string;
+            price: number;
+            description: string;
+          };
         };
       };
       profiles: {

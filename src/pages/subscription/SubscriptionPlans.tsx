@@ -8,9 +8,13 @@ import html2pdf from 'html2pdf.js';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import type { SubscriptionPlan } from '../../types';
+import { api } from '../../lib/api';
 
 // Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+const STRIPE_PUBLIC_KEY = `${import.meta.env.VITE_STRIPE_PUBLIC_KEY}`;
+const stripePromise = loadStripe(STRIPE_PUBLIC_KEY);
+
+console.log('Stripe key loaded:', STRIPE_PUBLIC_KEY ? 'Yes' : 'No');
 
 const SUBSCRIPTION_PLANS = [
   {
@@ -106,29 +110,30 @@ export default function SubscriptionPlans() {
       setProcessing(true);
       setSelectedPlan(plan);
 
-      // Create a Stripe checkout session
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          planId: plan.id,
-          userId: user.id,
-          userEmail: user.email,
-        }),
-      });
-
-      const session = await response.json();
-
-      if (session.error) {
-        throw new Error(session.error);
+      // Check if Stripe is initialized
+      const stripe = await stripePromise;
+      if (!stripe) {
+        throw new Error('Stripe failed to initialize. Please check your public key.');
       }
 
-      // Redirect to Stripe Checkout
-      const stripe = await stripePromise;
-      const { error } = await stripe!.redirectToCheckout({
-        sessionId: session.id,
+      const response = await api.createCheckoutSession({
+        planId: plan.id,
+        userId: user.id,
+        userEmail: user.email,
+      });
+
+      console.log('Checkout session response:', response);
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      if (!response.id) {
+        throw new Error('No session ID received from server');
+      }
+
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: response.id
       });
 
       if (error) {
@@ -136,63 +141,36 @@ export default function SubscriptionPlans() {
       }
 
     } catch (error: any) {
+      console.error('Payment error:', error);
       toast.error(error.message || 'Error processing payment');
+    } finally {
       setProcessing(false);
     }
   };
 
   // Handle successful payment return from Stripe
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search);
-    const sessionId = query.get('session_id');
-
-    if (sessionId && selectedPlan) {
-      (async () => {
-        try {
-          // Verify payment status with backend
-          const response = await fetch('/api/verify-payment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              sessionId,
-              userId: user?.id,
-            }),
-          });
-
-          const paymentData = await response.json();
-
-          if (paymentData.success) {
-            // Update subscription in Supabase
-            const { error } = await supabase.from('user_subscriptions').insert([
-              {
-                user_id: user?.id,
-                plan_id: selectedPlan.id,
-                status: 'active',
-                end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                payment_id: sessionId,
-              },
-            ]);
-
-            if (error) throw error;
-
-            // Generate and download receipt
-            await generateReceipt({
-              id: sessionId,
-              plan: selectedPlan,
-              end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            });
-
-            toast.success('Subscription updated successfully!');
-            navigate('/dashboard');
+    const sessionId = new URLSearchParams(window.location.search).get('session_id');
+    
+    if (sessionId) {
+      // Verify payment
+      api.verifyPayment({ sessionId })
+        .then((response) => {
+          if (response.success) {
+            toast.success('Payment successful!');
+            if (response.receiptUrl) {
+              window.open(response.receiptUrl, '_blank');
+            }
+          } else {
+            toast.error('Payment verification failed');
           }
-        } catch (error: any) {
-          toast.error(error.message || 'Error updating subscription');
-        }
-      })();
+        })
+        .catch((error) => {
+          console.error('Payment verification error:', error);
+          toast.error('Error verifying payment');
+        });
     }
-  }, [selectedPlan, user, navigate]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">

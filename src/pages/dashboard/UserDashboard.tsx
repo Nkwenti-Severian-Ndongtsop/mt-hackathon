@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CreditCard, FileText, PlusCircle, Activity } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -16,7 +16,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-
+  
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -32,10 +32,8 @@ export default function UserDashboard() {
   const navigate = useNavigate();
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
-  const [activeSubscription, setActiveSubscription] = useState<{
-    subscription_plans: { name: string };
-    end_date: string;
-  } | null>(null);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
@@ -45,7 +43,7 @@ export default function UserDashboard() {
 
     fetchSubscriptionPlans();
     fetchUserProjects();
-    fetchActiveSubscription();
+    fetchSubscription();
   }, [user, navigate]);
 
   const fetchSubscriptionPlans = async () => {
@@ -75,20 +73,39 @@ export default function UserDashboard() {
     setUserProjects(data);
   };
 
-  const fetchActiveSubscription = async () => {
-    const { data, error } = await supabase
-      .from('user_subscriptions')
-      .select('*, subscription_plans(*)')
-      .eq('user_id', user?.id)
-      .eq('status', 'active')
-      .single();
-    
-    if (error) {
-      console.error('Error fetching active subscription:', error);
-      return;
-    }
+  const fetchSubscription = async () => {
+    try {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          plan:plan_id (
+            name,
+            price,
+            description
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    setActiveSubscription(data);
+      if (error) throw error;
+      if (!data) {
+        console.warn('No active subscription found');
+        setSubscription(null);
+      } else {
+        console.log('Fetched subscription:', data);
+        setSubscription(data);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const chartData = {
@@ -103,29 +120,71 @@ export default function UserDashboard() {
     ]
   };
 
+  const handleUpgrade = () => {
+    navigate('/subscription-plans');
+  };
+
+  const SubscriptionCard = ({ subscription, onUpgrade }: { 
+    subscription: any; 
+    onUpgrade: () => void;
+  }) => {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-6 rounded-lg shadow-lg"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Subscription Status</h2>
+          <CreditCard className="h-6 w-6 text-indigo-600" />
+        </div>
+        {subscription ? (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-medium text-gray-900">
+                {subscription.plan.name}
+              </span>
+              <span className="px-2 py-1 text-sm text-green-800 bg-green-100 rounded-full">
+                Active
+              </span>
+            </div>
+            <div className="text-sm text-gray-500">
+              <p>Valid until: {new Date(subscription.end_date).toLocaleDateString()}</p>
+              <p className="mt-1">
+                {Math.ceil((new Date(subscription.end_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} days remaining
+              </p>
+            </div>
+            <button
+              onClick={onUpgrade}
+              className="mt-4 w-full px-4 py-2 text-sm text-indigo-600 border border-indigo-600 rounded-md hover:bg-indigo-50 transition-colors"
+            >
+              Upgrade Plan
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-500">No active subscription</p>
+            <button
+              onClick={onUpgrade}
+              className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+            >
+              Get Started
+            </button>
+          </div>
+        )}
+      </motion.div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {/* Subscription Status */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-6 rounded-lg shadow-lg"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Subscription Status</h2>
-              <CreditCard className="h-6 w-6 text-indigo-600" />
-            </div>
-            {activeSubscription ? (
-              <div>
-                <p className="text-lg font-medium text-gray-900">{activeSubscription.subscription_plans.name}</p>
-                <p className="text-sm text-gray-500">Active until: {new Date(activeSubscription.end_date).toLocaleDateString()}</p>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">No active subscription</p>
-            )}
-          </motion.div>
+          <SubscriptionCard 
+            subscription={subscription} 
+            onUpgrade={handleUpgrade}
+          />
 
           {/* Project Stats */}
           <motion.div
@@ -161,12 +220,12 @@ export default function UserDashboard() {
               <PlusCircle className="h-6 w-6 text-indigo-600" />
             </div>
             <div className="space-y-4">
-              <button
-                onClick={() => navigate('/submit-project')}
-                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+              <Link 
+                to="/submit-project" 
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
               >
                 Submit New Project
-              </button>
+              </Link>
               <button
                 onClick={() => navigate('/subscription-plans')}
                 className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
