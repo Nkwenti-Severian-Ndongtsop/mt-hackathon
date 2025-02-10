@@ -32,10 +32,8 @@ export default function UserDashboard() {
   const navigate = useNavigate();
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
-  const [activeSubscription, setActiveSubscription] = useState<{
-    subscription_plans: { name: string };
-    end_date: string;
-  } | null>(null);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
@@ -45,7 +43,7 @@ export default function UserDashboard() {
 
     fetchSubscriptionPlans();
     fetchUserProjects();
-    fetchActiveSubscription();
+    fetchSubscription();
   }, [user, navigate]);
 
   const fetchSubscriptionPlans = async () => {
@@ -75,20 +73,34 @@ export default function UserDashboard() {
     setUserProjects(data);
   };
 
-  const fetchActiveSubscription = async () => {
-    const { data, error } = await supabase
-      .from('user_subscriptions')
-      .select('*, subscription_plans(*)')
-      .eq('user_id', user?.id)
-      .eq('status', 'active')
-      .single();
-    
-    if (error) {
-      console.error('Error fetching active subscription:', error);
-      return;
-    }
+  const fetchSubscription = async () => {
+    try {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select(`
+          *,
+          plan:plan_id (
+            name,
+            price,
+            description
+          )
+        `)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
-    setActiveSubscription(data);
+      if (error) throw error;
+      console.log('Fetched subscription:', data);
+      setSubscription(data);
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const chartData = {
@@ -101,6 +113,10 @@ export default function UserDashboard() {
         backgroundColor: 'rgba(99, 102, 241, 0.5)',
       }
     ]
+  };
+
+  const handleUpgrade = () => {
+    navigate('/subscription-plans');
   };
 
   const SubscriptionCard = ({ subscription, onUpgrade }: { 
@@ -121,7 +137,7 @@ export default function UserDashboard() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-lg font-medium text-gray-900">
-                {subscription.subscription_plans.name}
+                {subscription.plan.name}
               </span>
               <span className="px-2 py-1 text-sm text-green-800 bg-green-100 rounded-full">
                 Active
@@ -160,7 +176,10 @@ export default function UserDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
           {/* Subscription Status */}
-          <SubscriptionCard subscription={activeSubscription} onUpgrade={() => navigate('/subscription-plans')} />
+          <SubscriptionCard 
+            subscription={subscription} 
+            onUpgrade={handleUpgrade}
+          />
 
           {/* Project Stats */}
           <motion.div
