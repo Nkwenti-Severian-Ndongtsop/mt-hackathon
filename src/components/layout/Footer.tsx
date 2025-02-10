@@ -1,4 +1,3 @@
-import React from 'react';
 import { Facebook, Twitter, Instagram, Linkedin, Github } from 'lucide-react';
 
 export default function Footer() {
@@ -16,7 +15,7 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              <li><a href="/about" className="text-gray-400 hover:text-white">About Us</a></li>
+              <li><a href="/About" className="text-gray-400 hover:text-white">About Us</a></li>
               <li><a href="/projects" className="text-gray-400 hover:text-white">Projects</a></li>
               <li><a href="/contact" className="text-gray-400 hover:text-white">Contact</a></li>
             </ul>
@@ -33,19 +32,19 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Follow Us</h3>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white" title="Facebook">
+              <a href="#" className="text-gray-400 hover:text-white">
                 <Facebook className="h-6 w-6" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white" title="Twitter">
+              <a href="#" className="text-gray-400 hover:text-white">
                 <Twitter className="h-6 w-6" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white" title="Instagram">
+              <a href="#" className="text-gray-400 hover:text-white">
                 <Instagram className="h-6 w-6" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white" title="LinkedIn">
+              <a href="#" className="text-gray-400 hover:text-white">
                 <Linkedin className="h-6 w-6" />
               </a>
-              <a href="https://github.com/AssahBismarkabah/mt-hackathon" className="text-gray-400 hover:text-white" title="Github">
+              <a href="#" className="text-gray-400 hover:text-white">
                 <Github className="h-6 w-6" />
               </a>
             </div>
