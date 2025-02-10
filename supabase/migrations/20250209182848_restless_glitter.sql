@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS user_subscriptions (
   status text DEFAULT 'active',
   start_date timestamptz DEFAULT now(),
   end_date timestamptz,
+  payment_id text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -142,3 +143,15 @@ VALUES
   ('Basic', 'Perfect for starters', 9.99, interval '1 month', '["Submit up to 2 projects", "Basic analytics", "Email support"]'),
   ('Pro', 'For growing projects', 29.99, interval '1 month', '["Submit up to 5 projects", "Advanced analytics", "Priority support", "Custom branding"]'),
   ('Enterprise', 'For large organizations', 99.99, interval '1 month', '["Unlimited projects", "Enterprise analytics", "24/7 support", "Custom solutions", "API access"]');
+
+-- Update the subscription_plans table
+alter table subscription_plans
+add column description text,
+add column features jsonb;
+
+-- Update the user_subscriptions table
+alter table user_subscriptions
+add column payment_id text,
+add column start_date timestamp with time zone default now(),
+alter column status set data type text 
+  check (status in ('active', 'cancelled', 'expired'));

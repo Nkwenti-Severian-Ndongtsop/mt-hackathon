@@ -8,6 +8,7 @@ import html2pdf from 'html2pdf.js';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import type { SubscriptionPlan } from '../../types';
+import { api } from '../../lib/api';
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -100,26 +101,17 @@ export default function SubscriptionPlans() {
     if (!user) {
       navigate('/login');
       return;
-    }
+    }``
 
     try {
       setProcessing(true);
       setSelectedPlan(plan);
 
-      // Create a Stripe checkout session
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          planId: plan.id,
-          userId: user.id,
-          userEmail: user.email,
-        }),
+      const session = await api.createCheckoutSession({
+        planId: plan.id,
+        userId: user.id,
+        userEmail: user.email,
       });
-
-      const session = await response.json();
 
       if (session.error) {
         throw new Error(session.error);

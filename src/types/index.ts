@@ -25,3 +25,18 @@ export interface SubscriptionPlan {
   price: number;
   features: string[];
 }
+
+export interface UserSubscription {
+  id: string;
+  user_id: string;
+  plan_id: string;
+  status: 'active' | 'cancelled' | 'expired';
+  start_date: string;
+  end_date: string;
+  payment_id: string;
+  subscription_plans: {
+    name: string;
+    price: number;
+    features: string[];
+  };
+}
