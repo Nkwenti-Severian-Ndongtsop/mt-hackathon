@@ -15,6 +15,7 @@ interface Project {
   profiles: {
     full_name: string;
   };
+  user_id: string;
 }
 
 export default function AdminDashboard() {
@@ -101,8 +102,24 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
+      // Notify the user about the project status change
+      await supabase
+        .from('notifications')
+        .insert([
+          {
+            user_id: pendingProjects.find(p => p.id === projectId)?.user_id,
+            message: `Your project has been ${status}.`,
+            type: status,
+          },
+        ]);
+
       setPendingProjects(prev => prev.filter(p => p.id !== projectId));
       toast.success(`Project ${status} successfully`);
+
+      // Redirect to FundProject page if approved
+      // if (status === 'approved') {
+      //   window.location.href = '/fund-project';
+      // }
     } catch (error) {
       toast.error('Error updating project status');
     }

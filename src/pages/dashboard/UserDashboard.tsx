@@ -27,6 +27,11 @@ ChartJS.register(
   Legend
 );
 
+type Notification = {
+  id: string;
+  message: string;
+};
+
 export default function UserDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -34,6 +39,7 @@ export default function UserDashboard() {
   const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -44,6 +50,7 @@ export default function UserDashboard() {
     fetchSubscriptionPlans();
     fetchUserProjects();
     fetchSubscription();
+    fetchNotifications();
   }, [user, navigate]);
 
   const fetchSubscriptionPlans = async () => {
@@ -105,6 +112,20 @@ export default function UserDashboard() {
       console.error('Error fetching subscription:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+      setNotifications(data || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
     }
   };
 
@@ -317,6 +338,18 @@ export default function UserDashboard() {
             ))}
           </div>
         </motion.div>
+
+        {/* Notifications */}
+        <div className="mt-8 bg-white p-6 rounded-lg shadow-lg">
+          <h2 className="text-xl font-semibold mb-6">Notifications</h2>
+          <div className="space-y-4">
+            {notifications.map((notification) => (
+              <div key={notification.id} className="notification">
+                {notification.message}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
