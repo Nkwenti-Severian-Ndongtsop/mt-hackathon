@@ -8,7 +8,7 @@ import SignUp from './pages/auth/SignUp';
 import Dashboard from './pages/dashboard/UserDashboard';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 import FundProject from './pages/projects/FundProject';
-
+import SubscriptionPlans from './pages/subscription/SubscriptionPlans';
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -49,6 +49,11 @@ function App() {
                 <FundProject />
               </ProtectedRoute>
             } />
+            <Route path="/subscription-plans" element={
+              <ProtectedRoute>
+             <SubscriptionPlans />
+              </ProtectedRoute>
+             } />
           </Routes>
         </main>
         <Footer />
