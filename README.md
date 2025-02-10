@@ -3,7 +3,7 @@ Failed payment: 4000 0000 0000 0002
 Expiry date: Any future date
 CVC: Any 3 digits
 
--- SQL to update the user_subscriptions table with proper foreign key
+###  SQL to update the user_subscriptions table with proper foreign key
 
 create table if not exists public.user_subscriptions (
   id uuid default gen_random_uuid() primary key,
@@ -16,12 +16,12 @@ create table if not exists public.user_subscriptions (
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- Add foreign key indexes
+###  Add foreign key indexes
 create index if not exists user_subscriptions_user_id_idx on public.user_subscriptions(user_id);
 create index if not exists user_subscriptions_plan_id_idx on public.user_subscriptions(plan_id);
 
 
--- Run this in Supabase SQL editor to clean up duplicate active subscriptions
+## Run this in Supabase SQL editor to clean up duplicate active subscriptions
 UPDATE public.user_subscriptions 
 SET status = 'expired'
 WHERE id NOT IN (
@@ -34,3 +34,10 @@ WHERE id NOT IN (
   ) t
   WHERE rn = 1
 );
+
+
+## After signing up, run this SQL in Supabase SQL editor to make the user an admin:
+
+UPDATE public.profiles 
+SET role = 'admin' 
+WHERE id = (SELECT id FROM auth.users WHERE email = 'admin@example.com');

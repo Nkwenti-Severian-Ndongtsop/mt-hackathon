@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CreditCard, FileText, PlusCircle, Activity } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -91,11 +91,16 @@ export default function UserDashboard() {
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      console.log('Fetched subscription:', data);
-      setSubscription(data);
+      if (!data) {
+        console.warn('No active subscription found');
+        setSubscription(null);
+      } else {
+        console.log('Fetched subscription:', data);
+        setSubscription(data);
+      }
     } catch (error) {
       console.error('Error fetching subscription:', error);
     } finally {
@@ -215,12 +220,12 @@ export default function UserDashboard() {
               <PlusCircle className="h-6 w-6 text-indigo-600" />
             </div>
             <div className="space-y-4">
-              <button
-                onClick={() => navigate('/submit-project')}
-                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+              <Link 
+                to="/submit-project" 
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
               >
                 Submit New Project
-              </button>
+              </Link>
               <button
                 onClick={() => navigate('/subscription-plans')}
                 className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
