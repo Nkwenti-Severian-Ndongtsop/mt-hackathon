@@ -17,49 +17,43 @@ export default function ProjectSubmissionForm() {
     setLoading(true);
 
     try {
-      // Check subscription and project limits
-      const { data: subscription } = await supabase
-        .from('user_subscriptions')
-        .select('*, plan:plan_id(*)')
-        .eq('user_id', user?.id)
-        .eq('status', 'active')
-        .single();
-
-      if (!subscription) {
-        toast.error('Active subscription required to submit projects');
-        return;
+      // Basic validation
+      if (!title || !description || !targetAmount || !duration) {
+        throw new Error('All fields are required');
       }
 
-      // Check project count
-      const { count } = await supabase
-        .from('projects')
-        .select('*', { count: 'exact' })
-        .eq('user_id', user?.id);
-
-      const projectLimit = subscription.plan.name === 'Basic' ? 2 : 
-                         subscription.plan.name === 'Pro' ? 5 : 
-                         Infinity;
-
-      if (count && count >= projectLimit) {
-        toast.error(`Project limit reached for ${subscription.plan.name} plan`);
-        return;
-      }
-
-      // Submit project
-      const { error } = await supabase.from('projects').insert({
-        user_id: user?.id,
-        title,
-        description,
+      // Create project data object
+      const projectData = {
+        title: title.trim(),
+        description: description.trim(),
         target_amount: parseFloat(targetAmount),
         duration_months: parseInt(duration),
+        user_id: user?.id,
+        current_amount: 0,
         status: 'pending'
-      });
+      };
 
-      if (error) throw error;
+      // Log the exact data being sent
+      console.log('Sending project data:', projectData);
+
+      // Submit to Supabase with debug logging
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([projectData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Success! Created project:', data);
       toast.success('Project submitted for review');
       resetForm();
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('Full error:', error);
+      toast.error(error.message || 'Error submitting project');
     } finally {
       setLoading(false);
     }
@@ -101,6 +95,7 @@ export default function ProjectSubmissionForm() {
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Enter project title"
                 required
+                maxLength={255}
               />
             </div>
 
@@ -131,6 +126,7 @@ export default function ProjectSubmissionForm() {
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Enter amount"
                   min="1000"
+                  step="0.01"
                   required
                 />
               </div>
@@ -172,4 +168,4 @@ export default function ProjectSubmissionForm() {
       </div>
     </div>
   );
-} 
+}

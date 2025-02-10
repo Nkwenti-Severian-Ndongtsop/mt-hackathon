@@ -13,7 +13,6 @@ interface Project {
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   profiles: {
-    email: string;
     full_name: string;
   };
 }
@@ -45,30 +44,47 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchDashboardData = async () => {
-    const { data: projects } = await supabase
-      .from('projects')
-      .select('*, profiles(full_name, email)')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false });
+    try {
+      // Fetch projects with proper join and all required fields
+      const { data: projects, error: projectsError } = await supabase
+        .from('projects')
+        .select(`
+          *,
+          profiles:user_id (
+            full_name
+          )
+        `)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
-    setPendingProjects(projects || []);
-    setLoading(false);
+      if (projectsError) throw projectsError;
+      
+      setPendingProjects(projects || []);
 
-    // Fetch statistics
-    const { count: userCount } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact' });
-    
-    setTotalUsers(userCount || 0);
+      // Fetch other statistics
+      const { count: userCount, error: userError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact' });
+      
+      if (userError) throw userError;
+      setTotalUsers(userCount || 0);
 
-    const { data: funding } = await supabase
-      .from('project_funding')
-      .select('amount')
-      .eq('status', 'completed');
-    
-    setTotalFunding(
-      funding?.reduce((acc, curr) => acc + parseFloat(curr.amount), 0) || 0
-    );
+      const { data: funding, error: fundingError } = await supabase
+        .from('project_funding')
+        .select('amount')
+        .eq('status', 'completed');
+      
+      if (fundingError) throw fundingError;
+      setTotalFunding(
+        funding?.reduce((acc, curr) => acc + parseFloat(curr.amount), 0) || 0
+      );
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast.error('Error loading dashboard data');
+      setLoading(false);
+    }
   };
 
   const handleNewProject = (project: any) => {
