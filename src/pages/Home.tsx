@@ -6,7 +6,12 @@ export default function Home() {
   return (
     <div className="bg-white">
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-indigo-600 to-purple-600">
+      <div
+  className="relative bg-cover bg-center"
+  style={{
+    backgroundImage: 'url("./src/images/landing_page.jpg")'
+  }}
+  >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
