@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -14,7 +14,8 @@ config({ path: join(__dirname, '.env') });
 const app = express();
 const PORT = Number(process.env.PORT) || 5001;
 
-// Enable CORS for all routes
+// Middleware
+app.use(express.json());
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true,
@@ -22,7 +23,15 @@ app.use(cors({
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept']
 }));
 
-app.use(express.json());
+// Debug middleware to log requests
+app.use(((req, _res, next) => {
+  console.log(`${req.method} ${req.path}`, {
+    body: req.body,
+    query: req.query,
+    params: req.params
+  });
+  next();
+}) as RequestHandler);
 
 // Routes
 app.use('/api', stripeRoutes);
@@ -46,8 +55,8 @@ const startServer = async (port: number) => {
     app.listen(port, () => {
       console.log(`Server running on http://localhost:${port}`);
     });
-  } catch (error: unknown) {
-    if ((error as ServerError).code === 'EADDRINUSE') {
+  } catch (error: any) {
+    if (error.code === 'EADDRINUSE') {
       console.log(`Port ${port} is busy, trying ${port + 1}`);
       await startServer(port + 1);
     } else {

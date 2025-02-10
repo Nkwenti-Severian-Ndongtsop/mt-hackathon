@@ -17,8 +17,26 @@ export type Database = {
         Row: {
           id: string;
           name: string;
+          description: string | null;
           price: number;
           features: string[];
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          description?: string | null;
+          price: number;
+          features?: string[];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          price?: number;
+          features?: string[];
+          created_at?: string;
         };
       };
       user_subscriptions: {
