@@ -8,6 +8,7 @@ import SignUp from './pages/auth/SignUp';
 import Dashboard from './pages/dashboard/UserDashboard';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 import FundProject from './pages/projects/FundProject';
+import About from "./components/layout/About";
 import SubscriptionPlans from './pages/subscription/SubscriptionPlans';
 // Protected Route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
