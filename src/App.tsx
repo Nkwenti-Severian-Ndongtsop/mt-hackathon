@@ -63,40 +63,56 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/about" element={<About />} />
             <Route path="/signup" element={<SignUp />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin" element={
-              <ProtectedRoute adminOnly>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/fund-project" element={
-              <ProtectedRoute>
-                <FundProject />
-              </ProtectedRoute>
-            } />
-            <Route path="/subscription-plans" element={
-              <ProtectedRoute>
-             <SubscriptionPlans />
-              </ProtectedRoute>
-             } />
-            <Route path="/submit-project" element={
-              <ProtectedRoute>
-                <ProjectSubmissionFormComponent />
-              </ProtectedRoute>
-            } />
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route 
-              path="/admin/dashboard" 
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
               element={
                 <ProtectedRoute adminOnly>
                   <AdminDashboard />
                 </ProtectedRoute>
-              } 
+              }
+            />
+            <Route
+              path="/fund-project"
+              element={
+                <ProtectedRoute>
+                  <FundProject />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/subscription-plans"
+              element={
+                <ProtectedRoute>
+                  <SubscriptionPlans />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/submit-project"
+              element={
+                <ProtectedRoute>
+                  <ProjectSubmissionFormComponent />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute adminOnly>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
             />
           </Routes>
         </main>
